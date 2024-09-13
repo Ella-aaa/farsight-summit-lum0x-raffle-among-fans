@@ -1,15 +1,16 @@
 /** @jsxImportSource frog/jsx */
 
-import { Button, Frog } from "frog";
+import { Button, Frog, TextInput } from "frog";
 import { devtools } from "frog/dev";
 import { neynar } from "frog/hubs";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
 import { Participant } from "../../utils/interface";
 import {
-  getDisplayName,
+  getUserDisplayName,
   getUserPfpUrl,
-  getUserFromChannel,
+  getUser,
+  postLum0xTestFrameValidation,
 } from "../../utils/helpers";
 import { getShareImage } from "../../ui/share";
 
@@ -20,29 +21,96 @@ const app = new Frog({
   title: "Raffle among your fans",
   imageAspectRatio: "1:1",
   imageOptions: {
-    height: 1106,
-    width: 1106,
+    height: 800,
+    width: 800,
+  },
+  initialState: {
+    channel: "",
+    startDate: "",
+    limit: 25,
   },
 });
 
 app.frame("/", (c) => {
   return c.res({
     image: "/Default.png",
-    intents: [<Button action="/result">Raffle!</Button>],
+    intents: [<Button action="/channel">Setting</Button>],
   });
 });
 
-app.frame("/result", async (c) => {
-  const winner: Participant = await getUserFromChannel();
-  console.log(winner);
-  const displayName = await getDisplayName(String(winner.fid));
-  console.log(displayName);
-  const pfpUrl = await getUserPfpUrl(winner.fid);
-  console.log(pfpUrl);
+app.frame("/channel", async (c) => {
+  const fid = c.frameData?.fid;
+  await postLum0xTestFrameValidation(Number(fid), "channel");
 
   return c.res({
-    image: getShareImage(displayName[0], pfpUrl),
-    intents: [<Button action="/">Back</Button>],
+    image: "/Steps.png",
+    intents: [
+      <TextInput placeholder="Enter channel" />,
+      <Button action="/">Back</Button>,
+      <Button action="/start-date">Next</Button>,
+    ],
+  });
+});
+
+app.frame("/start-date", async (c) => {
+  const fid = c.frameData?.fid;
+  await postLum0xTestFrameValidation(Number(fid), "start-date");
+
+  c.deriveState((previousState: any) => {
+    previousState.channel = c.inputText;
+  });
+
+  return c.res({
+    image: "/Steps.png",
+    intents: [
+      <TextInput placeholder="Enter Start Date... 2024-09-01" />,
+      <Button action="/channel">Back</Button>,
+      <Button action="/limit">Next</Button>,
+    ],
+  });
+});
+
+app.frame("/limit", async (c) => {
+  const fid = c.frameData?.fid;
+  await postLum0xTestFrameValidation(Number(fid), "limit");
+
+  c.deriveState((previousState: any) => {
+    previousState.endDate = c.inputText;
+  });
+
+  return c.res({
+    image: "/Steps.png",
+    intents: [
+      <TextInput placeholder="Enter limit... default: 25" />,
+      <Button action="/end-date">Back</Button>,
+      <Button action="/raffle">Next</Button>,
+    ],
+  });
+});
+
+app.frame("/raffle", (c) => {
+  let state = c.deriveState((previousState: any) => {
+    previousState.limit = parseInt(c.inputText ? c.inputText : "25", 10);
+  });
+
+  return c.res({
+    image: "/Default.png",
+    intents: [
+      <Button action="/limit">Back</Button>,
+      <Button action="/result">Raffle!</Button>,
+    ],
+  });
+});
+
+app.frame("/result", async (c: any) => {
+  const { channel, startDate, limit } = c.previousState;
+  const winner: Participant = await getUser(channel, startDate, limit);
+  const displayName = await getUserDisplayName(winner.fid);
+  const pfpUrl = await getUserPfpUrl(winner.fid);
+
+  return c.res({
+    image: getShareImage(displayName, pfpUrl),
+    intents: [<Button action="/">Home</Button>],
   });
 });
 
