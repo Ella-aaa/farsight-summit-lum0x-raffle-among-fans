@@ -23,7 +23,7 @@ export function getShareImage(displayName?: string, pfpUrl?: string) {
           width: "100%",
         }}
       >
-        <img src="/Share.png" />
+        <img src="/DEGEN_Share.png" />
       </div>
       <div
         style={{

@@ -33,7 +33,7 @@ const app = new Frog({
 
 app.frame("/", (c) => {
   return c.res({
-    image: "/Default.png",
+    image: "/DEGEN.png",
     intents: [<Button action="/channel">Setting</Button>],
   });
 });
@@ -94,7 +94,7 @@ app.frame("/raffle", (c) => {
   });
 
   return c.res({
-    image: "/Default.png",
+    image: "/DEGEN.png",
     intents: [
       <Button action="/limit">Back</Button>,
       <Button action="/result">Raffle!</Button>,
